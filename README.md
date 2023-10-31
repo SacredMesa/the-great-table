@@ -7,6 +7,8 @@ A simple reusable table component built in React and Tailwind, that provides the
 - Searching
 - Selectable Rows
 
+View a live version [here](https://the-great-table.vercel.app/)!
+
 ## Example app setup
 
 - Clone the repo

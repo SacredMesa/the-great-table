@@ -1,9 +1,6 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 export default function Root() {
-  const location = useLocation();
-  console.log('location', location);
-
   const navRoutes = [
     { route: '/products', label: 'Products' },
     { route: '/users', label: 'Users' }
