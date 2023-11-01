@@ -6,6 +6,7 @@ A simple reusable table component built in React and Tailwind, that provides the
 - Sorting
 - Searching
 - Selectable Rows
+- Table state from url query params (page, page size and sorting)
 
 View a live version [here](https://the-great-table.vercel.app/)!
 
