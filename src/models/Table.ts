@@ -5,4 +5,11 @@ interface TableColumn <RecordType> {
   sort?: boolean;
 }
 
-export type { TableColumn };
+interface TableSearchParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc' | undefined;
+}
+
+export type { TableColumn, TableSearchParams };

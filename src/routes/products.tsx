@@ -50,11 +50,11 @@ export default function Products() {
   ];
 
   return (
-    <div>
+    <>
       <Table columns={productColumns} data={products} rowKey="id" selectRows={setSelectedRows} />
       <div className="max-w-full overflow-scroll">
         {selectedRows && selectedRows.map((row) => <pre className='whitespace-pre-line' key={row.id}>{JSON.stringify(row, null, 4)}</pre>)}
       </div>
-    </div>
+    </>
   );
 }

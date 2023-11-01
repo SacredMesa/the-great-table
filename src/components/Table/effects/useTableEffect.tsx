@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { TableColumn } from '../../models/Table.ts';
+import {useEffect, useState} from 'react';
+import {TableColumn} from '../../../models/Table.ts';
 import _ from 'lodash';
+import {useSearchParamsStateEffect} from "../../../common/effects/useSearchParamsStateEffect.tsx";
 
 interface UseTableEffect<RecordType> {
   isDataLoaded: boolean;
@@ -8,8 +9,9 @@ interface UseTableEffect<RecordType> {
   tableData: RecordType[];
   totalPages: number;
   currentPage: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (pageSize: number) => void;
+  onPageSelect: (page: number) => void;
+  pageSize: number;
+  onPageSizeSelect: (pageSize: number) => void;
   onSort: (column: TableColumn<RecordType>) => void;
   sortedColumn: TableColumn<RecordType> | undefined;
   sortDirection: 'asc' | 'desc' | undefined;
@@ -18,7 +20,7 @@ interface UseTableEffect<RecordType> {
   selectedRows: RecordType[];
 }
 
-export const useTableEffect = <RecordType,>(
+export const useTableEffect = <RecordType, >(
   columns: TableColumn<RecordType>[],
   data: RecordType[] | undefined,
   rowSelectFunction?: (rows: RecordType[]) => void
@@ -35,8 +37,32 @@ export const useTableEffect = <RecordType,>(
   const isDataLoaded = !!data;
   const isDataContainingRecords = !!data?.length;
 
+  const {searchParams, updateParams, deleteParams} = useSearchParamsStateEffect();
+
+  // set states from query params on initial load
+  useEffect(() => {
+    for (const [param, value] of searchParams.entries()) {
+      switch (param) {
+        case 'page':
+          setCurrentPage(parseInt(value))
+          break;
+        case 'pageSize':
+          setPageSize(parseInt(value))
+          break;
+        case 'sortBy':
+          setSortedColumn(_.find(columns, ['title', value]))
+          break;
+        case 'sortDirection':
+          if (_.includes(['asc', 'desc', undefined], value)) setSortDirection(value as ('asc' | 'desc' | undefined));
+          break;
+      }
+    }
+  }, []);
+
+  // process table data
   useEffect(() => {
     if (data) {
+      // search through searchable columns for search input
       const filteredData = _.filter(data, (row) => {
         const searchableFields = _.filter(columns, 'searchable').map((field) => field.dataIndex) as (keyof RecordType)[];
         for (const fieldName of searchableFields) {
@@ -45,6 +71,7 @@ export const useTableEffect = <RecordType,>(
         return false;
       });
 
+      // slice data based on current page and page size
       const pageData = _.chain(filteredData)
         .thru((val) => {
           if (!sortedColumn || !sortDirection) return val;
@@ -53,6 +80,7 @@ export const useTableEffect = <RecordType,>(
         .slice((currentPage - 1) * pageSize, (currentPage - 1) * pageSize + pageSize)
         .value() as RecordType[];
 
+      // determine total pages from filtered data
       setTotalPages(Math.ceil(filteredData.length / pageSize));
       setTableData(pageData);
     }
@@ -62,14 +90,23 @@ export const useTableEffect = <RecordType,>(
     if (sortedColumn !== column) {
       setSortedColumn(column);
       setSortDirection('asc');
+
+      updateParams({
+        sortBy: column.title,
+        sortDirection: 'asc'
+      })
     } else {
       setSortDirection((direction: 'asc' | 'desc' | undefined) => {
         switch (direction) {
           case undefined:
+            updateParams({sortDirection: 'asc'})
             return 'asc';
           case 'asc':
+            updateParams({sortDirection: 'desc'})
             return 'desc';
           case 'desc':
+            setSortedColumn(undefined);
+            deleteParams(['sortBy', 'sortDirection'])
             return undefined;
         }
       });
@@ -86,14 +123,26 @@ export const useTableEffect = <RecordType,>(
     }
   };
 
+  const onPageSelect = (page: number) => {
+    updateParams({page})
+    setCurrentPage(page)
+  }
+
+  const onPageSizeSelect = (pageSize: number) => {
+    updateParams({pageSize})
+    setPageSize(pageSize)
+    setCurrentPage(1)
+  }
+
   return {
     isDataLoaded,
     isDataContainingRecords,
     tableData,
     totalPages,
     currentPage,
-    setCurrentPage,
-    setPageSize,
+    onPageSelect,
+    pageSize,
+    onPageSizeSelect,
     onSort,
     sortedColumn,
     sortDirection,
